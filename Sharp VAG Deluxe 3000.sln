@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sharp VAG Deluxe 3000", "Sharp VAG Deluxe 3000.csproj", "{43BAEBB8-FCBB-47CA-8B4D-0ECD3D67947A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{8944BAD5-15B4-42F4-92E1-C4851C2DAD60}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{43BAEBB8-FCBB-47CA-8B4D-0ECD3D67947A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43BAEBB8-FCBB-47CA-8B4D-0ECD3D67947A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43BAEBB8-FCBB-47CA-8B4D-0ECD3D67947A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43BAEBB8-FCBB-47CA-8B4D-0ECD3D67947A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8944BAD5-15B4-42F4-92E1-C4851C2DAD60}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8944BAD5-15B4-42F4-92E1-C4851C2DAD60}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8944BAD5-15B4-42F4-92E1-C4851C2DAD60}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8944BAD5-15B4-42F4-92E1-C4851C2DAD60}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
