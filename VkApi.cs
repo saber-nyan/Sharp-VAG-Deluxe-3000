@@ -20,63 +20,66 @@ namespace Sharp_VAG_Deluxe_3000 {
         private const string UserAgentGeneric =
             "KateMobileAndroid/51.2 lite-443 (Android 4.4.2; SDK 19; x86; unknown Android SDK built for x86; en)";
 
-        private const string Alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
+        private static readonly HttpClient Http = new HttpClient();
 
-        public string AccessToken;
+        public VkApi() {
+            // TODO: Use proxy
+            Http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentGeneric);
+        }
+
+        public string AccessToken { get; private set; }
 
 
         public async Task Authorize(AuthorizationParams authParams) {
             var receipt = await GetGcmReceipt();
 
-            using (var http = new HttpClient()) {
-                http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentGeneric);
-                var authUrlParams = await new FormUrlEncodedContent(new Dictionary<string, string> {
-                    {"grant_type", "password"},
-                    {"client_id", "2685278"},
-                    {"client_secret", "lxhD8OD7dMsqtXIm5IUY"},
-                    {"username", authParams.Login},
-                    {"password", authParams.Password},
-                    {"scope", authParams.Scope},
-                    {"v", ApiVersion},
-                    {"2fa_supported", "1"},
-                    {"force_sms", authParams.ForceSms},
-                    {"code", authParams.Code},
-                    {"captcha_sid", authParams.CaptchaSid},
-                    {"captcha_key", authParams.CaptchaKey}
-                }).ReadAsStringAsync(); // TODO: custom url formatting method
-                var authUrl = "https://oauth.vk.com/token?" + authUrlParams;
-                var authResult = await http.GetAsync(authUrl);
-                authResult.EnsureSuccessStatusCode(); // TODO: capthca, 2fa
+            var authUrlParams = await new FormUrlEncodedContent(new Dictionary<string, string> {
+                {"grant_type", "password"}, // TODO: use own method to convert to URL
+                {"client_id", "2685278"},
+                {"client_secret", "lxhD8OD7dMsqtXIm5IUY"},
+                {"username", authParams.Login},
+                {"password", authParams.Password},
+                {"scope", authParams.Scope},
+                {"v", ApiVersion},
+                {"2fa_supported", "1"},
+                {"force_sms", authParams.ForceSms},
+                {"code", authParams.Code},
+                {"captcha_sid", authParams.CaptchaSid},
+                {"captcha_key", authParams.CaptchaKey}
+            }).ReadAsStringAsync(); // TODO: custom url formatting method
+            var authUrl = "https://oauth.vk.com/token?" + authUrlParams;
+            var authResult = await Http.GetAsync(authUrl);
+            authResult.EnsureSuccessStatusCode(); // TODO: captcha, 2fa
 
-                var authResponse = JObject.Parse(await authResult.Content.ReadAsStringAsync());
-                if (authResponse["user_id"] == null) throw new Exception($"user_id is null! {authResponse}");
+            var authResponse = JObject.Parse(await authResult.Content.ReadAsStringAsync());
+            if (authResponse["user_id"] == null) throw new Exception($"user_id is null! {authResponse}");
 
-                var nonRefreshedToken = authResponse["access_token"].ToString();
-                var refreshParams = await new FormUrlEncodedContent(new Dictionary<string, string> {
-                    {"access_token", nonRefreshedToken},
-                    {"receipt", receipt},
-                    {"v", ApiVersion}
-                }).ReadAsStringAsync();
-                var refreshUrl = "https://api.vk.com/method/auth.refreshToken?" + refreshParams;
-                var refreshResult = await http.GetAsync(refreshUrl);
-                refreshResult.EnsureSuccessStatusCode();
+            var nonRefreshedToken = authResponse["access_token"].ToString();
+            var refreshParams = await new FormUrlEncodedContent(new Dictionary<string, string> {
+                {"access_token", nonRefreshedToken},
+                {"receipt", receipt},
+                {"v", ApiVersion}
+            }).ReadAsStringAsync();
+            var refreshUrl = "https://api.vk.com/method/auth.refreshToken?" + refreshParams;
+            var refreshResult = await Http.GetAsync(refreshUrl);
+            refreshResult.EnsureSuccessStatusCode();
 
-                var refreshResponse = JObject.Parse(await refreshResult.Content.ReadAsStringAsync())["response"];
-                if (refreshResponse["token"] == null) throw new Exception($"token is null! {refreshResponse}");
+            var refreshResponse = JObject.Parse(await refreshResult.Content.ReadAsStringAsync())["response"];
+            if (refreshResponse["token"] == null) throw new Exception($"token is null! {refreshResponse}");
 
-                if (refreshResponse["token"].ToString() == nonRefreshedToken)
-                    throw new Exception($"token {nonRefreshedToken} not refreshed!");
+            if (refreshResponse["token"].ToString() == nonRefreshedToken)
+                throw new Exception($"token {nonRefreshedToken} not refreshed!");
 
-                AccessToken = refreshResponse["token"].ToString();
-            }
+            AccessToken = refreshResponse["token"].ToString();
         }
 
         public static async Task<string> GetGcmReceipt() {
             AndroidCheckinResponse protoCheckIn;
-            using (var http = new HttpClient()) {
-                http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentGcm);
-                http.DefaultRequestHeaders.Add("Expect", "");
-                http.DefaultRequestHeaders.TryAddWithoutValidation("Content-Type", "application/x-protobuffer");
+            using (var requestMessage =
+                new HttpRequestMessage(HttpMethod.Post, "https://android.clients.google.com/checkin")) {
+                requestMessage.Headers.UserAgent.ParseAdd(UserAgentGcm);
+                requestMessage.Headers.Add("Expect", "");
+                requestMessage.Headers.TryAddWithoutValidation("Content-Type", "application/x-protobuffer");
 
                 var payload = new byte[] {
                     0x10, 0x00, 0x1a, 0x2a, 0x31, 0x2d, 0x39, 0x32, 0x39, 0x61, 0x30, 0x64, 0x63, 0x61, 0x30, 0x65,
@@ -103,8 +106,8 @@ namespace Sharp_VAG_Deluxe_3000 {
                     0x31, 0x51, 0x36, 0x52, 0x6e, 0x32, 0x44, 0x44, 0x5a, 0x6c, 0x31, 0x7a, 0x50, 0x44, 0x56, 0x61,
                     0x61, 0x65, 0x45, 0x48, 0x49, 0x74, 0x64, 0x2b, 0x59, 0x67, 0x3d, 0xa0, 0x01, 0x00, 0xb0, 0x01, 0x00
                 };
-                var result = await http.PostAsync("https://android.clients.google.com/checkin",
-                    new ByteArrayContent(payload));
+                requestMessage.Content = new ByteArrayContent(payload);
+                var result = await Http.SendAsync(requestMessage);
                 result.EnsureSuccessStatusCode();
                 protoCheckIn =
                     Serializer.Deserialize<AndroidCheckinResponse>(result.Content.ReadAsStreamAsync().Result);
@@ -169,13 +172,14 @@ namespace Sharp_VAG_Deluxe_3000 {
                 }
             }
 
-            var appid = GenerateRandomString(11);
+            var appid = Utils.GenerateRandomString(11);
 
             string receipt;
 
-            using (var http = new HttpClient()) {
-                http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentGcm);
-                http.DefaultRequestHeaders.TryAddWithoutValidation("Authorization",
+            using (var requestMessage1 =
+                new HttpRequestMessage(HttpMethod.Post, "https://android.clients.google.com/c2dm/register3")) {
+                requestMessage1.Headers.UserAgent.ParseAdd(UserAgentGcm);
+                requestMessage1.Headers.TryAddWithoutValidation("Authorization",
                     $"AidLogin {protoCheckIn.AndroidId}:{protoCheckIn.SecurityToken}");
 
                 var param = new Dictionary<string, string> {
@@ -203,9 +207,8 @@ namespace Sharp_VAG_Deluxe_3000 {
                     {"X-messenger2", "1"}
                 };
 
-
-                var result1 = await http.PostAsync("https://android.clients.google.com/c2dm/register3",
-                    new FormUrlEncodedContent(param));
+                requestMessage1.Content = new FormUrlEncodedContent(param);
+                var result1 = await Http.SendAsync(requestMessage1);
                 result1.EnsureSuccessStatusCode();
                 var body1 = await result1.Content.ReadAsStringAsync();
                 if (body1.Contains("Error"))
@@ -215,25 +218,24 @@ namespace Sharp_VAG_Deluxe_3000 {
                 param["X-kid"] = "|ID|2|";
                 param["X-X-kid"] = "|ID|2|";
 
-                var result2 = await http.PostAsync("https://android.clients.google.com/c2dm/register3",
-                    new FormUrlEncodedContent(param));
-                result2.EnsureSuccessStatusCode();
-                var body2 = await result2.Content.ReadAsStringAsync();
-                if (body2.Contains("Error"))
-                    throw new InvalidOperationException($"C2DM registration #2 error ({body2})");
+                using (var requestMessage2 = new HttpRequestMessage(HttpMethod.Post,
+                    "https://android.clients.google.com/c2dm/register3")) {
+                    requestMessage2.Headers.UserAgent.ParseAdd(UserAgentGcm);
+                    requestMessage2.Headers.TryAddWithoutValidation("Authorization",
+                        $"AidLogin {protoCheckIn.AndroidId}:{protoCheckIn.SecurityToken}");
+                    requestMessage2.Content = new FormUrlEncodedContent(param);
+                    var result2 = await Http.SendAsync(requestMessage2);
 
-                receipt = body2.Substring(13);
+                    result2.EnsureSuccessStatusCode();
+                    var body2 = await result2.Content.ReadAsStringAsync();
+                    if (body2.Contains("Error"))
+                        throw new InvalidOperationException($"C2DM registration #2 error ({body2})");
+
+                    receipt = body2.Substring(13);
+                }
             }
 
             return receipt;
-        }
-
-        private static string GenerateRandomString(int length) {
-            var random = new Random();
-            var sb = new StringBuilder(length);
-            for (var i = 0; i < length; i++) sb.Append(Alphabet[random.Next(Alphabet.Length)]);
-
-            return sb.ToString();
         }
     }
 }
