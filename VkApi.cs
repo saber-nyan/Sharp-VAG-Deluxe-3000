@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Security;
 using System.Net.Sockets;
@@ -20,48 +21,52 @@ namespace Sharp_VAG_Deluxe_3000 {
         private const string UserAgentGeneric =
             "KateMobileAndroid/51.2 lite-443 (Android 4.4.2; SDK 19; x86; unknown Android SDK built for x86; en)";
 
-        private static readonly HttpClient Http = new HttpClient();
+        private static HttpClient _http;
 
-        public VkApi() {
-            // TODO: Use proxy
-            Http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentGeneric);
+        /// <summary>
+        ///     Creates core class instance.
+        /// </summary>
+        /// <param name="proxy">
+        ///     (Optionally) proxy server to send all requests through.<br />
+        ///     See <a href="https://stackoverflow.com/a/30605900/10018051">SO.com</a>.
+        /// </param>
+        public VkApi(IWebProxy proxy = null) {
+            _http = proxy != null ? new HttpClient(new HttpClientHandler {Proxy = proxy}, true) : new HttpClient();
+            _http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentGeneric);
         }
 
         public string AccessToken { get; private set; }
 
-
         public async Task Authorize(AuthorizationParams authParams) {
             var receipt = await GetGcmReceipt();
 
-            var authUrlParams = await new FormUrlEncodedContent(new Dictionary<string, string> {
-                {"grant_type", "password"}, // TODO: use own method to convert to URL
-                {"client_id", "2685278"},
-                {"client_secret", "lxhD8OD7dMsqtXIm5IUY"},
-                {"username", authParams.Login},
-                {"password", authParams.Password},
-                {"scope", authParams.Scope},
-                {"v", ApiVersion},
-                {"2fa_supported", "1"},
-                {"force_sms", authParams.ForceSms},
-                {"code", authParams.Code},
-                {"captcha_sid", authParams.CaptchaSid},
-                {"captcha_key", authParams.CaptchaKey}
-            }).ReadAsStringAsync(); // TODO: custom url formatting method
-            var authUrl = "https://oauth.vk.com/token?" + authUrlParams;
-            var authResult = await Http.GetAsync(authUrl);
+            var authResult = await _http.GetAsync(Utils.BuildUrl("https://oauth.vk.com/token",
+                new Dictionary<string, string> {
+                    {"grant_type", "password"},
+                    {"client_id", "2685278"},
+                    {"client_secret", "lxhD8OD7dMsqtXIm5IUY"},
+                    {"username", authParams.Login},
+                    {"password", authParams.Password},
+                    {"scope", authParams.Scope},
+                    {"v", ApiVersion},
+                    {"2fa_supported", "1"},
+                    {"force_sms", authParams.ForceSms},
+                    {"code", authParams.Code},
+                    {"captcha_sid", authParams.CaptchaSid},
+                    {"captcha_key", authParams.CaptchaKey}
+                }));
             authResult.EnsureSuccessStatusCode(); // TODO: captcha, 2fa
 
             var authResponse = JObject.Parse(await authResult.Content.ReadAsStringAsync());
             if (authResponse["user_id"] == null) throw new Exception($"user_id is null! {authResponse}");
 
             var nonRefreshedToken = authResponse["access_token"].ToString();
-            var refreshParams = await new FormUrlEncodedContent(new Dictionary<string, string> {
-                {"access_token", nonRefreshedToken},
-                {"receipt", receipt},
-                {"v", ApiVersion}
-            }).ReadAsStringAsync();
-            var refreshUrl = "https://api.vk.com/method/auth.refreshToken?" + refreshParams;
-            var refreshResult = await Http.GetAsync(refreshUrl);
+            var refreshResult = await _http.GetAsync(Utils.BuildUrl("https://api.vk.com/method/auth.refreshToken",
+                new Dictionary<string, string> {
+                    {"access_token", nonRefreshedToken},
+                    {"receipt", receipt},
+                    {"v", ApiVersion}
+                }));
             refreshResult.EnsureSuccessStatusCode();
 
             var refreshResponse = JObject.Parse(await refreshResult.Content.ReadAsStringAsync())["response"];
@@ -107,7 +112,7 @@ namespace Sharp_VAG_Deluxe_3000 {
                     0x61, 0x65, 0x45, 0x48, 0x49, 0x74, 0x64, 0x2b, 0x59, 0x67, 0x3d, 0xa0, 0x01, 0x00, 0xb0, 0x01, 0x00
                 };
                 requestMessage.Content = new ByteArrayContent(payload);
-                var result = await Http.SendAsync(requestMessage);
+                var result = await _http.SendAsync(requestMessage);
                 result.EnsureSuccessStatusCode();
                 protoCheckIn =
                     Serializer.Deserialize<AndroidCheckinResponse>(result.Content.ReadAsStreamAsync().Result);
@@ -208,7 +213,7 @@ namespace Sharp_VAG_Deluxe_3000 {
                 };
 
                 requestMessage1.Content = new FormUrlEncodedContent(param);
-                var result1 = await Http.SendAsync(requestMessage1);
+                var result1 = await _http.SendAsync(requestMessage1);
                 result1.EnsureSuccessStatusCode();
                 var body1 = await result1.Content.ReadAsStringAsync();
                 if (body1.Contains("Error"))
@@ -224,7 +229,7 @@ namespace Sharp_VAG_Deluxe_3000 {
                     requestMessage2.Headers.TryAddWithoutValidation("Authorization",
                         $"AidLogin {protoCheckIn.AndroidId}:{protoCheckIn.SecurityToken}");
                     requestMessage2.Content = new FormUrlEncodedContent(param);
-                    var result2 = await Http.SendAsync(requestMessage2);
+                    var result2 = await _http.SendAsync(requestMessage2);
 
                     result2.EnsureSuccessStatusCode();
                     var body2 = await result2.Content.ReadAsStringAsync();
