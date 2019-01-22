@@ -51,6 +51,10 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="AuthorizationParams.cs"/>
+		<Compile Include="Exceptions\Need2FaValidationException.cs"/>
+		<Compile Include="Exceptions\NeedCaptchaValidationException.cs"/>
+		<Compile Include="Exceptions\NeedValidationRedirectException.cs"/>
+		<Compile Include="Exceptions\VkBaseException.cs"/>
 		<Compile Include="GcmCheckinProto.cs"/>
 		<Compile Include="Utils.cs"/>
 		<Compile Include="VarInt.cs"/>

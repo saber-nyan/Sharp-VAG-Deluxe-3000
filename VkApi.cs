@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using ProtoBuf;
+using Sharp_VAG_Deluxe_3000.Exceptions;
 
 namespace Sharp_VAG_Deluxe_3000 {
     /// <summary>
@@ -55,9 +56,32 @@ namespace Sharp_VAG_Deluxe_3000 {
                     {"captcha_sid", authParams.CaptchaSid},
                     {"captcha_key", authParams.CaptchaKey}
                 }));
-            authResult.EnsureSuccessStatusCode(); // TODO: captcha, 2fa
+//            authResult.EnsureSuccessStatusCode();
 
-            var authResponse = JObject.Parse(await authResult.Content.ReadAsStringAsync());
+            var responseBody = await authResult.Content.ReadAsStringAsync();
+            var authResponse = JObject.Parse(responseBody);
+
+            if (authResponse.ContainsKey("error"))
+                switch (authResponse["error"]?.ToString()) { // TODO: may throw (null) exception?
+                    case "need_validation":
+                        if (authResponse.ContainsKey("redirect_uri"))
+                            throw new NeedValidationRedirectException(responseBody,
+                                authResponse["redirect_uri"].ToString());
+                        else
+                            throw new Need2FaValidationException(responseBody,
+                                authResponse["validation_type"].ToString(),
+                                authResponse["phone_mask"]?.ToString()); // TODO: may throw (null) exception?
+                    case "need_captcha":
+                        throw new NeedCaptchaValidationException(responseBody,
+                            authResponse["captcha_sid"].ToString(),
+                            authResponse["captcha_key"].ToString());
+                    case "invalid_client":
+                        // TODO: {"error":"invalid_client","error_type":"username_or_password_is_incorrect","error_description":"Неправильный логин или пароль"}
+                        break;
+                    default: // TODO: more API errors (for example, wrong login/password)
+                        throw new VkBaseException(responseBody);
+                }
+
             if (authResponse["user_id"] == null) throw new Exception($"user_id is null! {authResponse}");
 
             var nonRefreshedToken = authResponse["access_token"].ToString();
