@@ -15,17 +15,17 @@ namespace Sharp_VAG_Deluxe_3000 {
         public string Password { get; set; }
 
         /// <summary>
-        ///     Captcha solution (if needed).
+        ///     Captcha solution (if required).
         /// </summary>
         public string CaptchaKey { get; set; }
 
         /// <summary>
-        ///     Captcha SID (if needed).
+        ///     Captcha SID (if required).
         /// </summary>
         public string CaptchaSid { get; set; }
 
         /// <summary>
-        ///     2FA code (if needed).
+        ///     2FA code (if required).
         /// </summary>
         public string Code { get; set; }
 
@@ -35,7 +35,7 @@ namespace Sharp_VAG_Deluxe_3000 {
         public string ForceSms { get; set; }
 
         /// <summary>
-        ///     Permissions. Needed at least audio,offline.<br />
+        ///     Permissions. Required at least audio,offline.<br />
         ///     See <a href="https://vk.com/dev/permissions">official docs</a>.
         /// </summary>
         public string Scope { get; set; }

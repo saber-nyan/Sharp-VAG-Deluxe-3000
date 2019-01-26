@@ -5,6 +5,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using Sharp_VAG_Deluxe_3000;
+using Sharp_VAG_Deluxe_3000.Exceptions;
+using Sharp_VAG_Deluxe_3000.Exceptions.Authorization;
 
 namespace Tests {
     public class Tests {
@@ -32,6 +34,18 @@ namespace Tests {
         }
 
         [Test]
+        public void TestAuthException() {
+            var api = new VkApi();
+
+            Assert.Throws<IncorrectCredentialsException>(() =>
+                api.Authorize(new AuthorizationParams {
+                    Login = "unknown_login",
+                    Password = "wrong_password",
+                    Scope = "offline"
+                }).GetAwaiter().GetResult());
+        }
+
+        [Test]
         public void TestBuildUrl() {
             Assert.AreEqual("https://saber.nya.pub",
                 Utils.BuildUrl("https://saber.nya.pub", new Dictionary<string, string>()));
@@ -46,6 +60,15 @@ namespace Tests {
                 {"c", "d"},
                 {"e", "f"}
             }));
+        }
+
+        [Test]
+        public void TestEnumCast() {
+            var errorType = Utils.GetEnumObjectByValue<VkBaseException.ApiErrorCodeEnum>(1);
+            Assert.AreEqual(VkBaseException.ApiErrorCodeEnum.UnknownError, errorType);
+            var errorType2 = Utils.GetEnumObjectByValue<VkBaseException.ApiErrorCodeEnum>(201);
+            Assert.AreEqual(VkBaseException.ApiErrorCodeEnum.AudioAccessDenied, errorType2);
+            Assert.Null(Utils.GetEnumObjectByValue<VkBaseException.ApiErrorCodeEnum>(2281337));
         }
     }
 }

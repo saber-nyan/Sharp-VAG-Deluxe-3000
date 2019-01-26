@@ -1,17 +1,17 @@
-namespace Sharp_VAG_Deluxe_3000.Exceptions {
+namespace Sharp_VAG_Deluxe_3000.Exceptions.Authorization {
     /// <summary>
-    ///     Captcha solution is needed.
+    ///     Captcha solution is required.
     /// </summary>
-    public class NeedCaptchaValidationException : VkBaseException {
+    public class CaptchaValidationRequiredException : VkBaseAuthorizationException {
         /// <summary>
         ///     Constructs "Need Captcha Validation" exception.
         /// </summary>
         /// <param name="responseBody">
-        ///     <inheritdoc cref="VkBaseException.ResponseBody" />
+        ///     <inheritdoc cref="VkBaseAuthorizationException.ResponseBody" />
         /// </param>
         /// <param name="captchaSid">Captcha ID to send with captcha solution.</param>
         /// <param name="captchaImg">Captcha image URL.</param>
-        public NeedCaptchaValidationException(string responseBody, string captchaSid, string captchaImg)
+        public CaptchaValidationRequiredException(string responseBody, string captchaSid, string captchaImg)
             : base(responseBody) {
             CaptchaSid = captchaSid;
             CaptchaImg = captchaImg;

@@ -1,10 +1,10 @@
 using System;
 
-namespace Sharp_VAG_Deluxe_3000.Exceptions {
+namespace Sharp_VAG_Deluxe_3000.Exceptions.Authorization {
     /// <summary>
-    ///     2FA code is needed.
+    ///     2FA code is required.
     /// </summary>
-    public class Need2FaValidationException : VkBaseException {
+    public class TwoFaValidationRequiredException : VkBaseAuthorizationException {
         /// <summary>
         ///     The way user gets 2FA code.
         /// </summary>
@@ -26,12 +26,12 @@ namespace Sharp_VAG_Deluxe_3000.Exceptions {
         ///     Constructs new "Need 2FA Validation" exception.
         /// </summary>
         /// <param name="responseBody">
-        ///     <inheritdoc cref="VkBaseException.ResponseBody" />
+        ///     <inheritdoc cref="VkBaseAuthorizationException.ResponseBody" />
         /// </param>
         /// <param name="validationType">The way user gets 2FA code.</param>
         /// <param name="phoneMask">Semi-hidden phone number.</param>
         /// <exception cref="NotImplementedException">If <paramref name="validationType" /> is incorrect.</exception>
-        public Need2FaValidationException(string responseBody, string validationType, string phoneMask = null) :
+        public TwoFaValidationRequiredException(string responseBody, string validationType, string phoneMask = null) :
             base(responseBody) {
             switch (validationType) {
                 case "2fa_sms":

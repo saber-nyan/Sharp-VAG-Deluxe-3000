@@ -1,16 +1,16 @@
-namespace Sharp_VAG_Deluxe_3000.Exceptions {
+namespace Sharp_VAG_Deluxe_3000.Exceptions.Authorization {
     /// <summary>
-    ///     External validation (via WEB-browser) needed.
+    ///     External validation (via WEB-browser) required.
     /// </summary>
-    public class NeedValidationRedirectException : VkBaseException {
+    public class ValidationRedirectRequiredException : VkBaseAuthorizationException {
         /// <summary>
         ///     Constructs new "Need WEB-based Validation" exception.
         /// </summary>
         /// <param name="responseBody">
-        ///     <inheritdoc cref="VkBaseException.ResponseBody" />
+        ///     <inheritdoc cref="VkBaseAuthorizationException.ResponseBody" />
         /// </param>
         /// <param name="redirectUrl">URL to redirect user to.</param>
-        public NeedValidationRedirectException(string responseBody, string redirectUrl) : base(responseBody) {
+        public ValidationRedirectRequiredException(string responseBody, string redirectUrl) : base(responseBody) {
             RedirectUrl = redirectUrl;
         }
 

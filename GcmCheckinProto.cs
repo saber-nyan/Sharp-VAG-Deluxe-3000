@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using ProtoBuf;
 
-// ReSharper disable InconsistentNaming
+// ReSharper disable All
 
 #pragma warning disable CS1591, CS0612, CS3021, IDE1006
 namespace Sharp_VAG_Deluxe_3000 {

@@ -6,7 +6,7 @@ namespace Sharp_VAG_Deluxe_3000 {
     /// <summary>
     ///     Various utilities.
     /// </summary>
-    public class Utils {
+    public static class Utils {
         private const string Alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace Sharp_VAG_Deluxe_3000 {
             baseUrl += "?";
             var isFirst = true;
             foreach (var param in @params) {
-                if (string.IsNullOrWhiteSpace(param.Key) || string.IsNullOrWhiteSpace(param.Value)) continue;
+                if (string.IsNullOrWhiteSpace(param.Key) || string.IsNullOrEmpty(param.Value)) continue;
 
                 if (!isFirst)
                     baseUrl += "&";
@@ -44,6 +44,17 @@ namespace Sharp_VAG_Deluxe_3000 {
             }
 
             return baseUrl;
+        }
+
+        /// <summary>
+        ///     Get enum instance from its value.
+        /// </summary>
+        /// <param name="value">One of source enum values.</param>
+        /// <typeparam name="T">Source enum.</typeparam>
+        /// <returns>Enum instance associated with provided value, null if no element associated with that value.</returns>
+        public static T? GetEnumObjectByValue<T>(int value) where T : struct {
+            if (Enum.IsDefined(typeof(T), value)) return (T) Enum.ToObject(typeof(T), value);
+            return null;
         }
     }
 }

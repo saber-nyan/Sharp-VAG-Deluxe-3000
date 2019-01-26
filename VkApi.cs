@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -9,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using ProtoBuf;
-using Sharp_VAG_Deluxe_3000.Exceptions;
+using Sharp_VAG_Deluxe_3000.Exceptions.Authorization;
 
 namespace Sharp_VAG_Deluxe_3000 {
     /// <summary>
@@ -38,6 +39,24 @@ namespace Sharp_VAG_Deluxe_3000 {
 
         public string AccessToken { get; private set; }
 
+        /// <summary>
+        ///     Authorizes user.
+        /// </summary>
+        /// <param name="authParams">Login, password and scope (at least audio+offline) are mandatory, other options are optional.</param>
+        /// <returns>Nothing.</returns>
+        /// <exception cref="ValidationRedirectRequiredException">If VK requires user validation via browser.</exception>
+        /// <exception cref="TwoFaValidationRequiredException">
+        ///     If VK requires 2FA. Invoke this method again w/
+        ///     <see cref="AuthorizationParams.Code" /> parameter.
+        /// </exception>
+        /// <exception cref="CaptchaValidationRequiredException">
+        ///     If VK requires captcha validation. Invoke this method again w/
+        ///     <see cref="AuthorizationParams.CaptchaKey" /> and <see cref="AuthorizationParams.CaptchaSid" /> params.
+        /// </exception>
+        /// <exception cref="IncorrectCredentialsException">If login or password is incorrect.</exception>
+        /// <exception cref="VkBaseAuthorizationException">If unknown exception occured.</exception>
+        /// <exception cref="InvalidDataException">If server response is incorrect.</exception>
+        /// <exception cref="InvalidOperationException">If GCM receipt obtainment or token refreshment failed.</exception>
         public async Task Authorize(AuthorizationParams authParams) {
             var receipt = await GetGcmReceipt();
 
@@ -56,33 +75,38 @@ namespace Sharp_VAG_Deluxe_3000 {
                     {"captcha_sid", authParams.CaptchaSid},
                     {"captcha_key", authParams.CaptchaKey}
                 }));
-//            authResult.EnsureSuccessStatusCode();
 
             var responseBody = await authResult.Content.ReadAsStringAsync();
             var authResponse = JObject.Parse(responseBody);
 
             if (authResponse.ContainsKey("error"))
-                switch (authResponse["error"]?.ToString()) { // TODO: may throw (null) exception?
+                switch (authResponse["error"]?.ToString()) {
                     case "need_validation":
                         if (authResponse.ContainsKey("redirect_uri"))
-                            throw new NeedValidationRedirectException(responseBody,
+                            throw new ValidationRedirectRequiredException(responseBody,
                                 authResponse["redirect_uri"].ToString());
                         else
-                            throw new Need2FaValidationException(responseBody,
+                            throw new TwoFaValidationRequiredException(responseBody,
                                 authResponse["validation_type"].ToString(),
-                                authResponse["phone_mask"]?.ToString()); // TODO: may throw (null) exception?
+                                authResponse["phone_mask"]?.ToString());
                     case "need_captcha":
-                        throw new NeedCaptchaValidationException(responseBody,
+                        throw new CaptchaValidationRequiredException(responseBody,
                             authResponse["captcha_sid"].ToString(),
                             authResponse["captcha_key"].ToString());
                     case "invalid_client":
-                        // TODO: {"error":"invalid_client","error_type":"username_or_password_is_incorrect","error_description":"Неправильный логин или пароль"}
-                        break;
-                    default: // TODO: more API errors (for example, wrong login/password)
-                        throw new VkBaseException(responseBody);
+                        switch (authResponse["error_type"].ToString()) {
+                            case "username_or_password_is_incorrect":
+                                throw new IncorrectCredentialsException(responseBody);
+                            default:
+                                throw new VkBaseAuthorizationException(responseBody);
+                            // Report issue if you found any other values...
+                        }
+                    default:
+                        throw new VkBaseAuthorizationException(responseBody);
+                    // Report issue if you found any other values...
                 }
 
-            if (authResponse["user_id"] == null) throw new Exception($"user_id is null! {authResponse}");
+            if (authResponse["user_id"] == null) throw new InvalidDataException($"user_id is null! {authResponse}");
 
             var nonRefreshedToken = authResponse["access_token"].ToString();
             var refreshResult = await _http.GetAsync(Utils.BuildUrl("https://api.vk.com/method/auth.refreshToken",
@@ -94,14 +118,19 @@ namespace Sharp_VAG_Deluxe_3000 {
             refreshResult.EnsureSuccessStatusCode();
 
             var refreshResponse = JObject.Parse(await refreshResult.Content.ReadAsStringAsync())["response"];
-            if (refreshResponse["token"] == null) throw new Exception($"token is null! {refreshResponse}");
+            if (refreshResponse["token"] == null) throw new InvalidDataException($"token is null! {refreshResponse}");
 
             if (refreshResponse["token"].ToString() == nonRefreshedToken)
-                throw new Exception($"token {nonRefreshedToken} not refreshed!");
+                throw new InvalidOperationException($"token {nonRefreshedToken} not refreshed!");
 
             AccessToken = refreshResponse["token"].ToString();
         }
 
+        /// <summary>
+        ///     Get receipt for authorization w/ access to audio.* methods.
+        /// </summary>
+        /// <returns>Receipt to refresh token with.</returns>
+        /// <exception cref="InvalidOperationException">If token retrieval failed.</exception>
         public static async Task<string> GetGcmReceipt() {
             AndroidCheckinResponse protoCheckIn;
             using (var requestMessage =
@@ -196,7 +225,7 @@ namespace Sharp_VAG_Deluxe_3000 {
                     ssl.Flush();
                     ssl.ReadByte(); // skip byte
                     var responseCode = ssl.ReadByte();
-                    if (responseCode != 3) // success if second byte == 3 
+                    if (responseCode != 3) // success if second byte == 3
                         throw new InvalidOperationException($"MTalk failed, expected 3, got {responseCode}");
                 }
             }

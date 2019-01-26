@@ -51,9 +51,11 @@
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="AuthorizationParams.cs"/>
-		<Compile Include="Exceptions\Need2FaValidationException.cs"/>
-		<Compile Include="Exceptions\NeedCaptchaValidationException.cs"/>
-		<Compile Include="Exceptions\NeedValidationRedirectException.cs"/>
+		<Compile Include="Exceptions\Authorization\CaptchaValidationRequiredException.cs"/>
+		<Compile Include="Exceptions\Authorization\IncorrectCredentialsException.cs"/>
+		<Compile Include="Exceptions\Authorization\TwoFaValidationRequiredException.cs"/>
+		<Compile Include="Exceptions\Authorization\ValidationRedirectRequiredException.cs"/>
+		<Compile Include="Exceptions\Authorization\VkBaseAuthorizationException.cs"/>
 		<Compile Include="Exceptions\VkBaseException.cs"/>
 		<Compile Include="GcmCheckinProto.cs"/>
 		<Compile Include="Utils.cs"/>
@@ -65,7 +67,7 @@
 		<None Include="packages.config"/>
 	</ItemGroup>
 	<Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
-	<!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+	<!-- To modify your build process, add your task inside one of the targets below and uncomment it.
 		 Other similar extension points exist, see Microsoft.Common.targets.
 	<Target Name="BeforeBuild">
 	</Target>
