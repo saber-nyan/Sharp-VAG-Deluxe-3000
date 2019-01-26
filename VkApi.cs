@@ -10,14 +10,17 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using ProtoBuf;
+using Sharp_VAG_Deluxe_3000.Exceptions;
 using Sharp_VAG_Deluxe_3000.Exceptions.Authorization;
+
+// ReSharper disable UnusedMember.Global
 
 namespace Sharp_VAG_Deluxe_3000 {
     /// <summary>
     ///     Sharp VAG Deluxe 3000 core class.
     /// </summary>
     public class VkApi {
-        public const string ApiVersion = "5.92";
+        private const string ApiVersion = "5.92";
         private const string UserAgentGcm = "Android-GCM/1.5 (generic_x86 KK)";
 
         private const string UserAgentGeneric =
@@ -187,14 +190,14 @@ namespace Sharp_VAG_Deluxe_3000 {
                 byte[] message6 = {0x29, 0x02};
 
                 var idStringBytes = Encoding.ASCII.GetBytes(protoCheckIn.AndroidId.ToString());
-                var idLen = VarInt.Write(idStringBytes.Length).ToList();
+                var idLen = Utils.VarIntWrite(idStringBytes.Length).ToList();
 
                 var tokenStringBytes = Encoding.ASCII.GetBytes(protoCheckIn.SecurityToken.ToString());
-                var tokenLen = VarInt.Write(tokenStringBytes.Length).ToList();
+                var tokenLen = Utils.VarIntWrite(tokenStringBytes.Length).ToList();
 
                 var hexId = "android-" + protoCheckIn.AndroidId;
                 var hexIdBytes = Encoding.ASCII.GetBytes(hexId);
-                var hexIdLen = VarInt.Write(hexIdBytes.Length);
+                var hexIdLen = Utils.VarIntWrite(hexIdBytes.Length);
 
                 var body = message1
                     .Concat(idLen)
@@ -210,7 +213,7 @@ namespace Sharp_VAG_Deluxe_3000 {
                     .Concat(hexIdBytes)
                     .Concat(message5)
                     .ToList();
-                var bodyLen = VarInt.Write(body.Count);
+                var bodyLen = Utils.VarIntWrite(body.Count);
 
                 var payload = message6
                     .Concat(bodyLen)
@@ -294,6 +297,39 @@ namespace Sharp_VAG_Deluxe_3000 {
             }
 
             return receipt;
+        }
+
+        /// <summary>
+        ///     Invoke API method.
+        /// </summary>
+        /// <param name="method">VK method (see <a href="https://vk.com/dev/methods">official docs</a>).</param>
+        /// <param name="params">Method parameters.</param>
+        /// <returns>JObject or JArray (depends on method) response.</returns>
+        /// <exception cref="VkApiException">If API call failed.</exception>
+        public async Task<JToken> Invoke(string method, Dictionary<string, string> @params) {
+            var response = await InvokeRaw(method, @params);
+            response.EnsureSuccessStatusCode(); // even errors comes with 200 OK
+            var body = await response.Content.ReadAsStringAsync();
+            var json = JObject.Parse(body);
+            if (json.ContainsKey("error") || !json.ContainsKey("response"))
+                throw new VkApiException(body, json["error_code"]?.ToObject<int>(),
+                    json["error_msg"]?.ToString());
+
+            var jsonResponse = json["response"];
+            return jsonResponse;
+        }
+
+        /// <summary>
+        ///     PostAsync wrapper, adds API version and access token.
+        /// </summary>
+        /// <param name="method">VK method (see <a href="https://vk.com/dev/methods">official docs</a>).</param>
+        /// <param name="params">POST params.</param>
+        /// <returns>Raw response.</returns>
+        private async Task<HttpResponseMessage> InvokeRaw(string method, IDictionary<string, string> @params) {
+            @params["v"] = ApiVersion;
+            @params["access_token"] = AccessToken;
+            return await _http.PostAsync($"https://api.vk.com/method/{method}",
+                new FormUrlEncodedContent(@params));
         }
     }
 }

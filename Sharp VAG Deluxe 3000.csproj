@@ -56,10 +56,10 @@
 		<Compile Include="Exceptions\Authorization\TwoFaValidationRequiredException.cs"/>
 		<Compile Include="Exceptions\Authorization\ValidationRedirectRequiredException.cs"/>
 		<Compile Include="Exceptions\Authorization\VkBaseAuthorizationException.cs"/>
+		<Compile Include="Exceptions\VkApiException.cs"/>
 		<Compile Include="Exceptions\VkBaseException.cs"/>
 		<Compile Include="GcmCheckinProto.cs"/>
 		<Compile Include="Utils.cs"/>
-		<Compile Include="VarInt.cs"/>
 		<Compile Include="VkApi.cs"/>
 		<Compile Include="Properties\AssemblyInfo.cs"/>
 	</ItemGroup>

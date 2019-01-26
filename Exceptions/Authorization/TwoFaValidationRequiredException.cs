@@ -1,5 +1,7 @@
 using System;
 
+// ReSharper disable MemberCanBePrivate.Global
+
 namespace Sharp_VAG_Deluxe_3000.Exceptions.Authorization {
     /// <summary>
     ///     2FA code is required.

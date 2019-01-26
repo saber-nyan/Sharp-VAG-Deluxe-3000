@@ -52,9 +52,21 @@ namespace Sharp_VAG_Deluxe_3000 {
         /// <param name="value">One of source enum values.</param>
         /// <typeparam name="T">Source enum.</typeparam>
         /// <returns>Enum instance associated with provided value, null if no element associated with that value.</returns>
-        public static T? GetEnumObjectByValue<T>(int value) where T : struct {
+        public static T? GetEnumObjectByValue<T>(int? value) where T : struct {
+            if (value == null) return null;
             if (Enum.IsDefined(typeof(T), value)) return (T) Enum.ToObject(typeof(T), value);
             return null;
+        }
+
+        public static IEnumerable<byte> VarIntWrite(int value) {
+            while (value != 0) {
+                var current = value & 0x7F;
+                value >>= 7;
+                if (value != 0)
+                    yield return (byte) (current | 0x80);
+                else
+                    yield return (byte) current;
+            }
         }
     }
 }

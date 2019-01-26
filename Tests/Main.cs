@@ -49,10 +49,10 @@ namespace Tests {
         public void TestBuildUrl() {
             Assert.AreEqual("https://saber.nya.pub",
                 Utils.BuildUrl("https://saber.nya.pub", new Dictionary<string, string>()));
-            Assert.AreEqual("lol.com/?meh=nope", Utils.BuildUrl("lol.com/", new Dictionary<string, string> {
+            Assert.AreEqual("lol.com/?meh=nope&SHIT=%20", Utils.BuildUrl("lol.com/", new Dictionary<string, string> {
                 {"meh", "nope"},
                 {"lol", null},
-                {"SHIT", ""},
+                {"SHIT", " "},
                 {"", ""}
             }));
             Assert.AreEqual("a.com/?a=b&c=d&e=f", Utils.BuildUrl("a.com/", new Dictionary<string, string> {
@@ -64,11 +64,11 @@ namespace Tests {
 
         [Test]
         public void TestEnumCast() {
-            var errorType = Utils.GetEnumObjectByValue<VkBaseException.ApiErrorCodeEnum>(1);
-            Assert.AreEqual(VkBaseException.ApiErrorCodeEnum.UnknownError, errorType);
-            var errorType2 = Utils.GetEnumObjectByValue<VkBaseException.ApiErrorCodeEnum>(201);
-            Assert.AreEqual(VkBaseException.ApiErrorCodeEnum.AudioAccessDenied, errorType2);
-            Assert.Null(Utils.GetEnumObjectByValue<VkBaseException.ApiErrorCodeEnum>(2281337));
+            var errorType = Utils.GetEnumObjectByValue<VkApiException.ApiErrorCodeEnum>(1);
+            Assert.AreEqual(VkApiException.ApiErrorCodeEnum.UnknownError, errorType);
+            var errorType2 = Utils.GetEnumObjectByValue<VkApiException.ApiErrorCodeEnum>(201);
+            Assert.AreEqual(VkApiException.ApiErrorCodeEnum.AudioAccessDenied, errorType2);
+            Assert.Null(Utils.GetEnumObjectByValue<VkApiException.ApiErrorCodeEnum>(2281337));
         }
     }
 }

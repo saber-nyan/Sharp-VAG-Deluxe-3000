@@ -1,3 +1,5 @@
+// ReSharper disable UnusedAutoPropertyAccessor.Global
+
 namespace Sharp_VAG_Deluxe_3000 {
     /// <summary>
     ///     Authorization params.<br />
@@ -39,5 +41,10 @@ namespace Sharp_VAG_Deluxe_3000 {
         ///     See <a href="https://vk.com/dev/permissions">official docs</a>.
         /// </summary>
         public string Scope { get; set; }
+
+        public override string ToString() {
+            return
+                $"{nameof(Login)}: {Login}, {nameof(CaptchaKey)}: {CaptchaKey}, {nameof(CaptchaSid)}: {CaptchaSid}, {nameof(Code)}: {Code}, {nameof(ForceSms)}: {ForceSms}, {nameof(Scope)}: {Scope}";
+        }
     }
 }
