@@ -1,0 +1,20 @@
+[*]
+charset = utf-8
+end_of_line = crlf
+trim_trailing_whitespace = true
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+
+[{*.jhm, *.cscfg, *.jrxml, *.rng, *.wadcfgx, *.axml, *.wsdl, *.webref, *.fxml, *.myapp, *.svcmap, *.xslt, *.ant, *.xul, *.xsl, *.xsd, *.jnlp, *.csdef, *.disco, *.tld, *.xml}]
+indent_style = tab
+tab_width = 4
+
+[*.config]
+indent_style = tab
+tab_width = 4
+
+[{*.csproj, *.ccproj, *.androidproj}]
+indent_style = tab
+tab_width = 4
+
