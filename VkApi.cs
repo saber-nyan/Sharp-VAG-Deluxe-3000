@@ -40,7 +40,8 @@ namespace Sharp_VAG_Deluxe_3000 {
             _http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgentGeneric);
         }
 
-        public string AccessToken { get; private set; }
+        // ReSharper disable once MemberCanBePrivate.Global
+        public string AccessToken { get; set; }
 
         /// <summary>
         ///     Authorizes user.
