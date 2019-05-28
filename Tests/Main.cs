@@ -34,6 +34,26 @@ namespace Tests {
         }
 
         [Test]
+        public void TestAudio() {
+            var api = new VkApi();
+            JObject credentials;
+            using (var reader =
+                File.OpenText($"{Environment.GetEnvironmentVariable("USERPROFILE")}\\credentials.json")) {
+                credentials = (JObject) JToken.ReadFrom(new JsonTextReader(reader));
+            }
+
+            api.Authorize(new AuthorizationParams {
+                Login = credentials["login"].ToString(),
+                Password = credentials["password"].ToString(),
+                Scope = "audio,offline"
+            }).GetAwaiter().GetResult();
+            var result = api.Invoke("audio.get", new Dictionary<string, string> {
+                {"user_id", "126171713"}
+            }).GetAwaiter().GetResult();
+            Console.WriteLine($"Obj is {result}");
+        }
+
+        [Test]
         public void TestAuthException() {
             var api = new VkApi();
 
